@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Suivi de Chantier Mensuel</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin:0;
+        padding:0;
+        background:#f5f5f5;
+    }
+    header {
+        background:#2c3e50;
+        color:#fff;
+        padding:20px;
+        text-align:center;
+    }
+    h1 {
+        margin:0;
+        font-size:24px;
+    }
+    .container {
+        display:flex;
+        flex-direction:row;
+        padding:20px;
+        gap:20px;
+    }
+    .calendar-container {
+        flex:2;
+        background:#fff;
+        padding:20px;
+        border-radius:8px;
+        box-shadow:0 0 5px rgba(0,0,0,0.1);
+    }
+    .calendar-header {
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:20px;
+    }
+    .calendar-header span {
+        font-size:18px;
+        font-weight:bold;
+    }
+    .week-filter {
+        display:flex;
+        gap:10px;
+        align-items:center;
+        margin-bottom:20px;
+    }
+    .week-filter select {
+        padding:5px;
+    }
+    .calendar-grid {
+        display:grid;
+        grid-template-columns:repeat(7,1fr);
+        gap:10px;
+    }
+    .day-cell {
+        background:#ecf0f1;
+        border-radius:4px;
+        text-align:center;
+        padding:10px;
+        cursor:pointer;
+        min-height:80px;
+        display:flex;
+        flex-direction:column;
+        justify-content:space-between;
+    }
+    .day-cell:hover {
+        background:#dfe6e9;
+    }
+    .day-number {
+        font-weight:bold;
+    }
+
+    .detail-panel {
+        flex:1;
+        background:#fff;
+        border-radius:8px;
+        box-shadow:0 0 5px rgba(0,0,0,0.1);
+        padding:20px;
+        display:flex;
+        flex-direction:column;
+        gap:20px;
+    }
+    .detail-panel h2 {
+        margin:0;
+        font-size:20px;
+        margin-bottom:10px;
+        text-align:center;
+        background:#2980b9;
+        color:#fff;
+        padding:10px;
+        border-radius:8px;
+    }
+    .section {
+        background:#f9f9f9;
+        border-radius:8px;
+        padding:15px;
+        margin-bottom:10px;
+        box-shadow:0 0 3px rgba(0,0,0,0.05);
+    }
+    .section h3 {
+        margin-top:0;
+        font-size:16px;
+        margin-bottom:10px;
+        color:#2c3e50;
+    }
+    label {
+        font-weight:bold;
+        display:block;
+        margin:5px 0 5px 0;
+    }
+    input[type="text"], input[type="number"], textarea {
+        width:100%;
+        padding:8px;
+        border:1px solid #ccc;
+        border-radius:4px;
+        font-size:14px;
+        margin-bottom:10px;
+    }
+    .tasks-container, .done-tasks-container, .materials-container {
+        display:flex;
+        flex-direction:column;
+        gap:5px;
+    }
+    .task-item {
+        display:flex;
+        gap:5px;
+        align-items:center;
+    }
+    .task-item input[type="text"] {
+        flex:1;
+    }
+    .task-item button {
+        background:#e74c3c;
+        color:#fff;
+        border:none;
+        padding:5px 10px;
+        border-radius:4px;
+        cursor:pointer;
+    }
+    .task-item button:hover {
+        background:#c0392b;
+    }
+
+    .add-task-btn {
+        background:#27ae60;
+        color:#fff;
+        border:none;
+        padding:5px 10px;
+        border-radius:4px;
+        cursor:pointer;
+        margin-bottom:10px;
+    }
+    .add-task-btn:hover {
+        background:#2ecc71;
+    }
+
+    .personnel-grid {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+    }
+    .personnel-grid label {
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        font-weight:normal;
+    }
+    .personnel-grid label span {
+        font-weight:bold;
+    }
+
+    .photo-preview {
+        margin-top:10px;
+        max-width:100%;
+        border:1px solid #ccc;
+        border-radius:4px;
+    }
+
+    button#saveBtn {
+        padding:10px;
+        border:none;
+        background:#2980b9;
+        color:#fff;
+        border-radius:4px;
+        cursor:pointer;
+        font-size:14px;
+        width:100%;
+    }
+    button#saveBtn:hover {
+        background:#3498db;
+    }
+
+    .week-display {
+        margin-top:20px;
+        background:#eef;
+        padding:10px;
+        border-radius:4px;
+    }
+    .week-display-day {
+        border-bottom:1px solid #ccc;
+        padding:10px 0;
+    }
+    .week-display-day:last-child {
+        border-bottom:none;
+    }
+    .week-display-day h3 {
+        margin:0 0 5px 0;
+    }
+    .week-display-day img {
+        max-width:100px;
+        display:block;
+        margin-top:5px;
+    }
+
+    @media(max-width:800px) {
+        .container {
+            flex-direction:column;
+        }
+    }
+</style>
+</head>
+<body>
+<header>
+    <h1>Suivi Journalier, Hebdomadaire et Mensuel du Chantier</h1>
+</header>
+<div class="container">
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <span id="currentMonthYear"></span>
+            <button id="prevMonth">&lt;</button>
+            <button id="nextMonth">&gt;</button>
+        </div>
+        <div class="week-filter">
+            <label for="weekSelect">Filtrer par semaine :</label>
+            <select id="weekSelect">
+                <option value="">Aucune</option>
+            </select>
+        </div>
+        <div class="calendar-grid">
+            <div><strong>Lun</strong></div>
+            <div><strong>Mar</strong></div>
+            <div><strong>Mer</strong></div>
+            <div><strong>Jeu</strong></div>
+            <div><strong>Ven</strong></div>
+            <div><strong>Sam</strong></div>
+            <div><strong>Dim</strong></div>
+        </div>
+        <div class="calendar-grid" id="daysContainer"></div>
+        <div class="week-display" id="weekDisplay" style="display:none;"></div>
+    </div>
+    <div class="detail-panel">
+        <h2 id="selectedDayTitle">Sélectionnez un jour</h2>
+        
+        <div class="section">
+            <h3>Tâches en cours</h3>
+            <button class="add-task-btn" id="addOngoingTaskBtn">Ajouter une tâche</button>
+            <div class="tasks-container" id="ongoingTasksContainer"></div>
+        </div>
+
+        <div class="section">
+            <h3>Tâches réalisées</h3>
+            <button class="add-task-btn" id="addDoneTaskBtn">Ajouter une tâche</button>
+            <div class="done-tasks-container" id="doneTasksContainer"></div>
+        </div>
+
+        <div class="section">
+            <h3>Matériel commandé</h3>
+            <button class="add-task-btn" id="addMaterialBtn">Ajouter un matériel</button>
+            <div class="materials-container" id="materialsContainer"></div>
+        </div>
+
+        <div class="section">
+            <h3>Problèmes rencontrés</h3>
+            <textarea id="problems" rows="2"></textarea>
+        </div>
+
+        <div class="section">
+            <h3>Personnels présents</h3>
+            <div class="personnel-grid">
+                <label><span>Maçons:</span><input type="number" min="0" id="macons" /></label>
+                <label><span>Main d'œuvre:</span><input type="number" min="0" id="mainOeuvre" /></label>
+                <label><span>Menuisiers:</span><input type="number" min="0" id="menuisiers" /></label>
+                <label><span>Ferrailleurs:</span><input type="number" min="0" id="ferrailleurs" /></label>
+                <label><span>Chef de chantier:</span><input type="number" min="0" id="chefChantier" /></label>
+                <label><span>Électriciens:</span><input type="number" min="0" id="electriciens" /></label>
+                <label><span>Plombiers:</span><input type="number" min="0" id="plombiers" /></label>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Photo du jour</h3>
+            <input type="file" id="photoInput" accept="image/*" />
+            <img id="photoPreview" class="photo-preview" style="display:none;"/>
+        </div>
+        
+        <button id="saveBtn">Enregistrer</button>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // VARIABLES GLOBALES
+    // ============================================================
+    let currentDate = new Date();
+    let selectedDate = null; 
+    const daysContainer = document.getElementById('daysContainer');
+    const currentMonthYear = document.getElementById('currentMonthYear');
+    const prevMonthBtn = document.getElementById('prevMonth');
+    const nextMonthBtn = document.getElementById('nextMonth');
+    const weekSelect = document.getElementById('weekSelect');
+    const weekDisplay = document.getElementById('weekDisplay');
+
+    const problemsField = document.getElementById('problems');
+    const maconsField = document.getElementById('macons');
+    const mainOeuvreField = document.getElementById('mainOeuvre');
+    const menuisiersField = document.getElementById('menuisiers');
+    const ferrailleursField = document.getElementById('ferrailleurs');
+    const chefChantierField = document.getElementById('chefChantier');
+    const electriciensField = document.getElementById('electriciens');
+    const plombiersField = document.getElementById('plombiers');
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+
+    const saveBtn = document.getElementById('saveBtn');
+    const selectedDayTitle = document.getElementById('selectedDayTitle');
+
+    const ongoingTasksContainer = document.getElementById('ongoingTasksContainer');
+    const doneTasksContainer = document.getElementById('doneTasksContainer');
+    const materialsContainer = document.getElementById('materialsContainer');
+    const addOngoingTaskBtn = document.getElementById('addOngoingTaskBtn');
+    const addDoneTaskBtn = document.getElementById('addDoneTaskBtn');
+    const addMaterialBtn = document.getElementById('addMaterialBtn');
+
+    let ongoingTasks = [];
+    let doneTasks = [];
+    let materialsOrdered = [];
+    let currentPhotoData = null; // base64
+
+    // ============================================================
+    // FONCTIONS UTILITAIRES
+    // ============================================================
+    function getMonthData(year, month) {
+        const date = new Date(year, month, 1);
+        const result = [];
+        let firstDay = date.getDay();
+        if (firstDay === 0) firstDay = 7; 
+        for(let i=1; i<firstDay; i++){
+            result.push(null);
+        }
+        const lastDay = new Date(year, month+1, 0).getDate();
+        for(let d=1; d<=lastDay; d++){
+            result.push(d);
+        }
+        return result;
+    }
+
+    function zeroPad(num) {
+        return num < 10 ? '0' + num : num;
+    }
+
+    function formatDate(year, month, day) {
+        return year + '-' + zeroPad(month+1) + '-' + zeroPad(day);
+    }
+
+    function saveDayData(dateKey, data) {
+        localStorage.setItem(dateKey, JSON.stringify(data));
+    }
+
+    function loadDayData(dateKey) {
+        const data = localStorage.getItem(dateKey);
+        if(data) {
+            return JSON.parse(data);
+        } else {
+            return {
+                tasksOngoing: [],
+                tasksDone: [],
+                materialsOrdered: [],
+                problems: '',
+                personnel: {
+                    macons:0,
+                    mainOeuvre:0,
+                    menuisiers:0,
+                    ferrailleurs:0,
+                    chefChantier:0,
+                    electriciens:0,
+                    plombiers:0
+                },
+                photoData:null
+            };
+        }
+    }
+
+    function renderCalendar(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        currentMonthYear.textContent = date.toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+
+        const monthDays = getMonthData(year, month);
+        daysContainer.innerHTML = '';
+        monthDays.forEach((day) => {
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+            if(day !== null) {
+                const span = document.createElement('span');
+                span.className = 'day-number';
+                span.textContent = day;
+                cell.appendChild(span);
+
+                cell.addEventListener('click', ()=> {
+                    const selected = new Date(year, month, day);
+                    selectDay(selected);
+                })
+            }
+            daysContainer.appendChild(cell);
+        });
+        fillWeekSelect(year, month, monthDays);
+    }
+
+    function selectDay(date) {
+        selectedDate = date;
+        selectedDayTitle.textContent = "Détails du " + date.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+        const dateKey = formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayData = loadDayData(dateKey);
+
+        ongoingTasks = dayData.tasksOngoing || [];
+        doneTasks = dayData.tasksDone || [];
+        materialsOrdered = dayData.materialsOrdered || [];
+        problemsField.value = dayData.problems || '';
+
+        maconsField.value = dayData.personnel?.macons || 0;
+        mainOeuvreField.value = dayData.personnel?.mainOeuvre || 0;
+        menuisiersField.value = dayData.personnel?.menuisiers || 0;
+        ferrailleursField.value = dayData.personnel?.ferrailleurs || 0;
+        chefChantierField.value = dayData.personnel?.chefChantier || 0;
+        electriciensField.value = dayData.personnel?.electriciens || 0;
+        plombiersField.value = dayData.personnel?.plombiers || 0;
+
+        currentPhotoData = dayData.photoData || null;
+        if(currentPhotoData) {
+            photoPreview.src = currentPhotoData;
+            photoPreview.style.display = 'block';
+        } else {
+            photoPreview.style.display = 'none';
+        }
+
+        renderTasks();
+    }
+
+    function renderTasks() {
+        // Rendu des tâches en cours
+        ongoingTasksContainer.innerHTML = '';
+        ongoingTasks.forEach((task, index) => {
+            const item = document.createElement('div');
+            item.className = 'task-item';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = task;
+            input.addEventListener('input', (e)=>{
+                ongoingTasks[index] = e.target.value;
+            });
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = "X";
+            removeBtn.addEventListener('click', () => {
+                ongoingTasks.splice(index,1);
+                renderTasks();
+            });
+            item.appendChild(input);
+            item.appendChild(removeBtn);
+            ongoingTasksContainer.appendChild(item);
+        });
+
+        // Rendu des tâches réalisées
+        doneTasksContainer.innerHTML = '';
+        doneTasks.forEach((task, index) => {
+            const item = document.createElement('div');
+            item.className = 'task-item';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = task;
+            input.addEventListener('input', (e)=>{
+                doneTasks[index] = e.target.value;
+            });
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = "X";
+            removeBtn.addEventListener('click', () => {
+                doneTasks.splice(index,1);
+                renderTasks();
+            });
+            item.appendChild(input);
+            item.appendChild(removeBtn);
+            doneTasksContainer.appendChild(item);
+        });
+
+        // Rendu du matériel commandé
+        materialsContainer.innerHTML = '';
+        materialsOrdered.forEach((mat, index) => {
+            const item = document.createElement('div');
+            item.className = 'task-item';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = mat;
+            input.addEventListener('input', (e)=>{
+                materialsOrdered[index] = e.target.value;
+            });
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = "X";
+            removeBtn.addEventListener('click', () => {
+                materialsOrdered.splice(index,1);
+                renderTasks();
+            });
+            item.appendChild(input);
+            item.appendChild(removeBtn);
+            materialsContainer.appendChild(item);
+        });
+    }
+
+    function fillWeekSelect(year, month, monthDays) {
+        const totalCells = monthDays.length;
+        const numberOfWeeks = Math.ceil(totalCells / 7);
+        weekSelect.innerHTML = '<option value="">Aucune</option>';
+        for(let w=1; w<=numberOfWeeks; w++) {
+            weekSelect.innerHTML += `<option value="${w}">Semaine ${w}</option>`;
+        }
+    }
+
+    function displayWeekData(weekNumber) {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const monthDays = getMonthData(year, month);
+        const startIndex = (weekNumber-1)*7;
+        const weekDays = monthDays.slice(startIndex, startIndex+7);
+        weekDisplay.innerHTML = '';
+        
+        weekDays.forEach(day => {
+            if(day !== null) {
+                const dateKey = formatDate(year, month, day);
+                const data = loadDayData(dateKey);
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'week-display-day';
+
+                const title = document.createElement('h3');
+                const dateObj = new Date(year, month, day);
+                title.textContent = dateObj.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+                dayDiv.appendChild(title);
+
+                const tasksO = document.createElement('p');
+                tasksO.innerHTML = "<strong>Tâches en cours:</strong> " + (data.tasksOngoing && data.tasksOngoing.length>0 ? data.tasksOngoing.join(', ') : "Aucune");
+                dayDiv.appendChild(tasksO);
+
+                const tasksD = document.createElement('p');
+                tasksD.innerHTML = "<strong>Tâches réalisées:</strong> " + (data.tasksDone && data.tasksDone.length>0 ? data.tasksDone.join(', ') : "Aucune");
+                dayDiv.appendChild(tasksD);
+
+                const mats = document.createElement('p');
+                mats.innerHTML = "<strong>Matériel commandé:</strong> " + (data.materialsOrdered && data.materialsOrdered.length > 0 ? data.materialsOrdered.join(', ') : "Aucun");
+                dayDiv.appendChild(mats);
+
+                const prob = document.createElement('p');
+                prob.innerHTML = "<strong>Problèmes:</strong> " + (data.problems || "Aucun");
+                dayDiv.appendChild(prob);
+
+                const pers = data.personnel || {};
+                const persStr = "Maçons: " + (pers.macons||0) + ", Main d'œuvre: " + (pers.mainOeuvre||0) + ", Menuisiers: " + (pers.menuisiers||0) +
+                                ", Ferrailleurs: " + (pers.ferrailleurs||0) + ", Chef: " + (pers.chefChantier||0) +
+                                ", Électriciens: " + (pers.electriciens||0) + ", Plombiers: " + (pers.plombiers||0);
+
+                const persP = document.createElement('p');
+                persP.innerHTML = "<strong>Personnels:</strong> " + persStr;
+                dayDiv.appendChild(persP);
+
+                if(data.photoData) {
+                    const img = document.createElement('img');
+                    img.src = data.photoData;
+                    dayDiv.appendChild(img);
+                }
+
+                weekDisplay.appendChild(dayDiv);
+            }
+        });
+
+        weekDisplay.style.display = 'block';
+    }
+
+    function clearDetailFields() {
+        problemsField.value = '';
+        maconsField.value = 0;
+        mainOeuvreField.value = 0;
+        menuisiersField.value = 0;
+        ferrailleursField.value = 0;
+        chefChantierField.value = 0;
+        electriciensField.value = 0;
+        plombiersField.value = 0;
+        photoPreview.style.display = 'none';
+        ongoingTasks = [];
+        doneTasks = [];
+        materialsOrdered = [];
+        renderTasks();
+    }
+
+    // ============================================================
+    // EVENTS
+    // ============================================================
+    prevMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar(currentDate);
+        selectedDate = null;
+        selectedDayTitle.textContent = "Sélectionnez un jour";
+        clearDetailFields();
+        weekDisplay.style.display = 'none';
+        weekSelect.value='';
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar(currentDate);
+        selectedDate = null;
+        selectedDayTitle.textContent = "Sélectionnez un jour";
+        clearDetailFields();
+        weekDisplay.style.display = 'none';
+        weekSelect.value='';
+    });
+
+    saveBtn.addEventListener('click', () => {
+        if(!selectedDate) {
+            alert("Veuillez d'abord sélectionner un jour.");
+            return;
+        }
+        const dateKey = formatDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+
+        const data = {
+            tasksOngoing: ongoingTasks,
+            tasksDone: doneTasks,
+            materialsOrdered: materialsOrdered,
+            problems: problemsField.value,
+            personnel: {
+                macons: parseInt(maconsField.value,10)||0,
+                mainOeuvre: parseInt(mainOeuvreField.value,10)||0,
+                menuisiers: parseInt(menuisiersField.value,10)||0,
+                ferrailleurs: parseInt(ferrailleursField.value,10)||0,
+                chefChantier: parseInt(chefChantierField.value,10)||0,
+                electriciens: parseInt(electriciensField.value,10)||0,
+                plombiers: parseInt(plombiersField.value,10)||0
+            },
+            photoData: currentPhotoData
+        };
+        saveDayData(dateKey, data);
+        alert("Données du jour enregistrées !");
+    });
+
+    weekSelect.addEventListener('change', () => {
+        const weekNumber = weekSelect.value;
+        if(weekNumber) {
+            displayWeekData(parseInt(weekNumber, 10));
+        } else {
+            weekDisplay.style.display = 'none';
+            weekDisplay.innerHTML = '';
+        }
+    });
+
+    addOngoingTaskBtn.addEventListener('click', () => {
+        ongoingTasks.push('');
+        renderTasks();
+    });
+
+    addDoneTaskBtn.addEventListener('click', () => {
+        doneTasks.push('');
+        renderTasks();
+    });
+
+    addMaterialBtn.addEventListener('click', () => {
+        materialsOrdered.push('');
+        renderTasks();
+    });
+
+    photoInput.addEventListener('change', (event)=>{
+        const file = event.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentPhotoData = e.target.result;
+                photoPreview.src = currentPhotoData;
+                photoPreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    renderCalendar(currentDate);
+</script>
+</body>
+</html>
